@@ -1,0 +1,20 @@
+# Adopt a bucket created outside Kubernetes, and keep a queue when its CR is deleted.
+apiVersion: s3.services.k8s.aws/v1alpha1
+kind: Bucket
+metadata:
+  name: legacy
+  namespace: team-a
+  annotations:
+    services.k8s.aws/adoption-policy: adopt-or-create
+spec:
+  name: eks-cap-demo-${SUFFIX}-team-a-legacy
+---
+apiVersion: sqs.services.k8s.aws/v1alpha1
+kind: Queue
+metadata:
+  name: keep-me
+  namespace: team-a
+  annotations:
+    services.k8s.aws/deletion-policy: retain
+spec:
+  queueName: eks-cap-demo-${SUFFIX}-team-a-keep-me

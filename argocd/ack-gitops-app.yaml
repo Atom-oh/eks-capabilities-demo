@@ -1,0 +1,16 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ack-gitops
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Atom-oh/eks-capabilities-demo.git
+    targetRevision: main
+    path: ack-gitops
+  destination:
+    name: eks-cap-demo
+    namespace: team-a
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }

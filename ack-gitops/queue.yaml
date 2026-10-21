@@ -1,0 +1,7 @@
+apiVersion: sqs.services.k8s.aws/v1alpha1
+kind: Queue
+metadata:
+  name: gitops-queue
+  namespace: team-a
+spec:
+  queueName: eks-cap-demo-230de0-team-a-gitops
