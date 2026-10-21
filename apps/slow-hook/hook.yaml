@@ -1,0 +1,26 @@
+# PreSync hook that runs longer than 120s, to test the managed sync timeout.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: slow-presync
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext: { runAsNonRoot: true, runAsUser: 65534, seccompProfile: { type: RuntimeDefault } }
+      containers:
+        - name: wait
+          image: public.ecr.aws/docker/library/busybox:1.37
+          command: ["sh", "-c", "sleep 150; echo done"]
+          securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
+          resources: { requests: { cpu: 10m, memory: 16Mi } }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: { name: after-hook }
+data: { ok: "true" }

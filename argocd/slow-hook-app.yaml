@@ -1,0 +1,16 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: slow-hook
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Atom-oh/eks-capabilities-demo.git
+    targetRevision: main
+    path: apps/slow-hook
+  destination:
+    name: eks-cap-demo
+    namespace: slow-hook
+  syncPolicy:
+    syncOptions: [CreateNamespace=true]

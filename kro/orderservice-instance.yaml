@@ -1,0 +1,7 @@
+apiVersion: platform.example.com/v1alpha1
+kind: OrderService
+metadata:
+  name: checkout
+  namespace: team-a
+spec:
+  replicas: 1

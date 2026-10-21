@@ -1,0 +1,94 @@
+# One API for an app team: SQS queue + DynamoDB table (ACK) + config + Deployment.
+# kro wires AWS-generated values (queue URL, table ARN) into the ConfigMap.
+apiVersion: kro.run/v1alpha1
+kind: ResourceGraphDefinition
+metadata:
+  name: orderservices
+spec:
+  schema:
+    apiVersion: v1alpha1
+    group: platform.example.com
+    kind: OrderService
+    scope: Namespaced
+    spec:
+      replicas: integer | default=1 minimum=1 maximum=3
+    status:
+      queueURL: ${queue.status.queueURL}
+      tableARN: ${table.status.ackResourceMetadata.arn}
+      availableReplicas: ${deployment.status.availableReplicas}
+  resources:
+    - id: queue
+      readyWhen:
+        - ${queue.status.?queueURL.orValue("") != ""}
+      template:
+        apiVersion: sqs.services.k8s.aws/v1alpha1
+        kind: Queue
+        metadata:
+          name: ${schema.metadata.name}
+          namespace: ${schema.metadata.namespace}
+        spec:
+          queueName: ${"eks-cap-demo-" + schema.metadata.namespace + "-" + schema.metadata.name}
+    - id: table
+      readyWhen:
+        - ${table.status.?tableStatus.orValue("") == "ACTIVE"}
+      template:
+        apiVersion: dynamodb.services.k8s.aws/v1alpha1
+        kind: Table
+        metadata:
+          name: ${schema.metadata.name}
+          namespace: ${schema.metadata.namespace}
+        spec:
+          tableName: ${"eks-cap-demo-" + schema.metadata.namespace + "-" + schema.metadata.name}
+          billingMode: PAY_PER_REQUEST
+          attributeDefinitions:
+            - { attributeName: id, attributeType: S }
+          keySchema:
+            - { attributeName: id, keyType: HASH }
+    - id: config
+      template:
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: ${schema.metadata.name + "-aws"}
+          namespace: ${schema.metadata.namespace}
+        data:
+          QUEUE_URL: ${queue.status.queueURL}
+          TABLE_ARN: ${table.status.ackResourceMetadata.arn}
+    - id: deployment
+      readyWhen:
+        - ${deployment.status.?availableReplicas.orValue(0) >= deployment.spec.replicas}
+      template:
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: ${schema.metadata.name}
+          namespace: ${schema.metadata.namespace}
+        spec:
+          replicas: ${schema.spec.replicas}
+          selector:
+            matchLabels: { app.kubernetes.io/name: "${schema.metadata.name}" }
+          template:
+            metadata:
+              labels: { app.kubernetes.io/name: "${schema.metadata.name}" }
+            spec:
+              automountServiceAccountToken: false
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 101
+                seccompProfile: { type: RuntimeDefault }
+              containers:
+                - name: web
+                  image: nginxinc/nginx-unprivileged:1.30.6-alpine
+                  envFrom:
+                    - configMapRef: { name: "${config.metadata.name}" }
+                  securityContext:
+                    allowPrivilegeEscalation: false
+                    readOnlyRootFilesystem: true
+                    capabilities: { drop: [ALL] }
+                  resources:
+                    requests: { cpu: 50m, memory: 32Mi }
+                  volumeMounts:
+                    - { name: tmp, mountPath: /tmp }
+              volumes:
+                - name: tmp
+                  emptyDir: { sizeLimit: 32Mi }
