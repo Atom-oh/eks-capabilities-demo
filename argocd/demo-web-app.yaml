@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo-web
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Atom-oh/eks-capabilities-demo.git
+    targetRevision: main
+    path: apps/demo-web
+  destination:
+    name: eks-cap-demo
+    namespace: demo-web
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true]

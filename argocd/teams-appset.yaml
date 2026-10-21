@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: teams
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - list:
+        elements:
+          - { team: team-1 }
+          - { team: team-2 }
+          - { team: team-3 }
+          - { team: team-4 }
+          - { team: team-5 }
+  template:
+    metadata:
+      name: 'web-{{.team}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/Atom-oh/eks-capabilities-demo.git
+        targetRevision: main
+        path: apps/demo-web
+      destination:
+        name: eks-cap-demo
+        namespace: '{{.team}}'
+      syncPolicy:
+        automated: { prune: true, selfHeal: true }
+        syncOptions: [CreateNamespace=true]
