@@ -4,4 +4,4 @@ metadata:
   name: demo-web-content
 data:
   index.html: |
-    demo-web version=v11
+    demo-web version=v12
