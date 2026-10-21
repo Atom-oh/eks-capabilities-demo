@@ -1,5 +1,9 @@
 # One API for an app team: SQS queue + DynamoDB table (ACK) + config + Deployment.
 # kro wires AWS-generated values (queue URL, table ARN) into the ConfigMap.
+# Naming: child objects get a fixed "-os" suffix so they cannot collide with CRs that
+# people create by hand (kro applies onto same-named objects without an ownership check),
+# and AWS names use "_" (not valid in Kubernetes names) so namespace/name pairs stay unique.
+# The blog measurements used an earlier version without the suffix and separator.
 apiVersion: kro.run/v1alpha1
 kind: ResourceGraphDefinition
 metadata:
@@ -24,10 +28,10 @@ spec:
         apiVersion: sqs.services.k8s.aws/v1alpha1
         kind: Queue
         metadata:
-          name: ${schema.metadata.name}
+          name: ${schema.metadata.name + "-os"}
           namespace: ${schema.metadata.namespace}
         spec:
-          queueName: ${"eks-cap-demo-" + schema.metadata.namespace + "-" + schema.metadata.name}
+          queueName: ${"eks-cap-demo_" + schema.metadata.namespace + "_" + schema.metadata.name}
     - id: table
       readyWhen:
         - ${table.status.?tableStatus.orValue("") == "ACTIVE"}
@@ -35,10 +39,10 @@ spec:
         apiVersion: dynamodb.services.k8s.aws/v1alpha1
         kind: Table
         metadata:
-          name: ${schema.metadata.name}
+          name: ${schema.metadata.name + "-os"}
           namespace: ${schema.metadata.namespace}
         spec:
-          tableName: ${"eks-cap-demo-" + schema.metadata.namespace + "-" + schema.metadata.name}
+          tableName: ${"eks-cap-demo_" + schema.metadata.namespace + "_" + schema.metadata.name}
           billingMode: PAY_PER_REQUEST
           attributeDefinitions:
             - { attributeName: id, attributeType: S }
@@ -49,7 +53,7 @@ spec:
         apiVersion: v1
         kind: ConfigMap
         metadata:
-          name: ${schema.metadata.name + "-aws"}
+          name: ${schema.metadata.name + "-os-aws"}
           namespace: ${schema.metadata.namespace}
         data:
           QUEUE_URL: ${queue.status.queueURL}
@@ -61,15 +65,15 @@ spec:
         apiVersion: apps/v1
         kind: Deployment
         metadata:
-          name: ${schema.metadata.name}
+          name: ${schema.metadata.name + "-os"}
           namespace: ${schema.metadata.namespace}
         spec:
           replicas: ${schema.spec.replicas}
           selector:
-            matchLabels: { app.kubernetes.io/name: "${schema.metadata.name}" }
+            matchLabels: { app.kubernetes.io/name: "${schema.metadata.name + \"-os\"}" }
           template:
             metadata:
-              labels: { app.kubernetes.io/name: "${schema.metadata.name}" }
+              labels: { app.kubernetes.io/name: "${schema.metadata.name + \"-os\"}" }
             spec:
               automountServiceAccountToken: false
               securityContext:
