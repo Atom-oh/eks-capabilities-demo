@@ -1,0 +1,14 @@
+# team-a: S3, SQS, DynamoDB role. team-b: SQS-only role.
+apiVersion: services.k8s.aws/v1alpha1
+kind: IAMRoleSelector
+metadata: { name: team-a }
+spec:
+  arn: arn:aws:iam::${ACCOUNT_ID}:role/eks-cap-demo-ack-team-a
+  namespaceSelector: { names: [team-a] }
+---
+apiVersion: services.k8s.aws/v1alpha1
+kind: IAMRoleSelector
+metadata: { name: team-b }
+spec:
+  arn: arn:aws:iam::${ACCOUNT_ID}:role/eks-cap-demo-ack-team-b
+  namespaceSelector: { names: [team-b] }

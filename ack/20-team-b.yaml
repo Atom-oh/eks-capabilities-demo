@@ -1,0 +1,12 @@
+# team-b role allows only SQS: the Queue succeeds, the Bucket must be denied.
+apiVersion: sqs.services.k8s.aws/v1alpha1
+kind: Queue
+metadata: { name: events, namespace: team-b }
+spec:
+  queueName: eks-cap-demo-${SUFFIX}-team-b-events
+---
+apiVersion: s3.services.k8s.aws/v1alpha1
+kind: Bucket
+metadata: { name: not-allowed, namespace: team-b }
+spec:
+  name: eks-cap-demo-${SUFFIX}-team-b-denied

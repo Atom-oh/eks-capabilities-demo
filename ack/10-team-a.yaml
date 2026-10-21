@@ -1,0 +1,28 @@
+apiVersion: s3.services.k8s.aws/v1alpha1
+kind: Bucket
+metadata: { name: assets, namespace: team-a }
+spec:
+  name: eks-cap-demo-${SUFFIX}-team-a-assets
+  tagging:
+    tagSet:
+      - { key: owner, value: team-a }
+---
+apiVersion: sqs.services.k8s.aws/v1alpha1
+kind: Queue
+metadata: { name: orders, namespace: team-a }
+spec:
+  queueName: eks-cap-demo-${SUFFIX}-team-a-orders
+  tags: { owner: team-a }
+---
+apiVersion: dynamodb.services.k8s.aws/v1alpha1
+kind: Table
+metadata: { name: orders, namespace: team-a }
+spec:
+  tableName: eks-cap-demo-${SUFFIX}-team-a-orders
+  billingMode: PAY_PER_REQUEST
+  attributeDefinitions:
+    - { attributeName: id, attributeType: S }
+  keySchema:
+    - { attributeName: id, keyType: HASH }
+  tags:
+    - { key: owner, value: team-a }

@@ -1,0 +1,7 @@
+apiVersion: platform.example.com/v1alpha1
+kind: NginxApp
+metadata:
+  name: gitops-web
+  namespace: example
+spec:
+  replicas: 2
