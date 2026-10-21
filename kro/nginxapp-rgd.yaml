@@ -13,9 +13,6 @@ spec:
       image: string | default="nginxinc/nginx-unprivileged:1.30.6-alpine"
       ingress:
         enabled: boolean | default=false
-        className: string | default="internal"
-        host: string | default="app.example.com"
-        tlsSecret: string | default="app-tls"
     status:
       availableReplicas: ${deployment.status.availableReplicas}
       serviceIP: ${service.spec.clusterIP}
@@ -107,13 +104,14 @@ spec:
           labels:
             app.kubernetes.io/name: ${schema.metadata.name}
         spec:
-          ingressClassName: ${schema.spec.ingress.className}
+          # Class and host are fixed by the platform, not taken from tenant input.
+          ingressClassName: internal
           tls:
             - hosts:
-                - ${schema.spec.ingress.host}
-              secretName: ${schema.spec.ingress.tlsSecret}
+                - ${schema.metadata.name + "." + schema.metadata.namespace + ".apps.example.com"}
+              secretName: ${schema.metadata.name + "-tls"}
           rules:
-            - host: ${schema.spec.ingress.host}
+            - host: ${schema.metadata.name + "." + schema.metadata.namespace + ".apps.example.com"}
               http:
                 paths:
                   - path: /

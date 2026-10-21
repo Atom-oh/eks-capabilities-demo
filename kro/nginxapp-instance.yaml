@@ -8,6 +8,3 @@ spec:
   image: nginxinc/nginx-unprivileged:1.30.6-alpine
   ingress:
     enabled: false
-    className: internal
-    host: app.example.com
-    tlsSecret: app-tls
